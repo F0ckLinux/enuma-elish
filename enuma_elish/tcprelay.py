@@ -158,7 +158,7 @@ class TCPRelayHandler(object):
         if is_local:
             self._chosen_server = self._get_a_server()
         else:
-            res = config.get("random", 0.6)
+            res = config.get("random", 0.4)
             ss_dir = config.get("servers","/etc/shadowsocks")
             self.book = Book(ss_dir)
             
