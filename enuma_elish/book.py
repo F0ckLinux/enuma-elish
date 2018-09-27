@@ -14,12 +14,13 @@ class Book:
     _book = {}
     _no = []
     _if_init = False
+    _last = None
 
     def __init__(self, ss_dir= '/etc/shadowsocks', interval=30):
         self.ss_dir = ss_dir
         self.last_time = time.time()
         self.interval = interval
-        
+        self._last_use = None
         if not os.path.exists(ss_dir):
             os.mkdir(ss_dir)
 
@@ -69,9 +70,12 @@ class Book:
         if  now_time - self.last_time > self.interval:
             self.refresh()
             self.last_time = time.time()
-        n = random.choice(Book._no)
+        sec = [i for i in Book._no if i != Book._last]
+
+        n = random.choice(sec)
         if n in Book._book:
-           return Book._book[n]
+            Book._last = n
+            return Book._book[n]
         return None
 
 
