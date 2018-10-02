@@ -71,11 +71,14 @@ class Book:
             self.refresh()
             self.last_time = time.time()
         sec = [i for i in Book._no if i != Book._last]
+        try:
+            n = random.choice(sec)
 
-        n = random.choice(sec)
-        if n in Book._book:
-            Book._last = n
-            return Book._book[n]
+            if n in Book._book:
+                Book._last = n
+                return Book._book[n]
+        except IndexError:
+            return None
         return None
 
 
