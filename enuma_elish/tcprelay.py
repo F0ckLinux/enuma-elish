@@ -178,7 +178,7 @@ class TCPRelayHandler(object):
                         pp_passwd = 'thefoolish' + str(pp)
                         pp_port = 13000 + pp
                         _config_tunnel['password'] = pp_passwd
-                        _config_tunnel['server_port'] == pp_port
+                        _config_tunnel['server_port'] = pp_port
                     self._cryptor_tunnel = cryptor.Cryptor(_config_tunnel['password'],
                                             _config_tunnel['method'],
                                             _config_tunnel['crypto_path'])
