@@ -5,6 +5,8 @@ import time
 import threading
 import sys
 import logging
+from enuma_elish import common
+
 if sys.version[0] == '3':
     from queue import Queue
 else:
@@ -22,11 +24,16 @@ DEBUG_BASE2 = {"server": "localhost", "server_port": 12001, "password": "123", "
 #   change random rato: \x02
 # MODE single: \x00
 #      flow: \x01
-#      randome: \x02
+#      random: \x02
 
 
 
 ##  b'\x09\x01\x00'
+MODE_D = {
+    2:'random',
+    1:'flow',
+    0:'single'
+}
 
 class Book:
     _book = {}
@@ -36,9 +43,11 @@ class Book:
     ss_dir= '/etc/shadowsocks'
     interval = 60
     _queue = Queue(10)
-    mode = 'randome' # flow
+    mode = 'single' # flow
     now_use = 0
     is_back = False
+    ratio = 0.3
+    mode_file = os.path.join('/tmp/', os.urandom(8).hex())
 
     if not os.path.exists(ss_dir):
         os.mkdir(ss_dir)
@@ -63,11 +72,12 @@ class Book:
         t = None
         while 1:
             if not cls._queue.empty():
+                logging.info("[\033[0;34m background close ! \033[0m]")
                 break
             try:
                 t = threading.Thread(target=cls.Refresh)
                 t.start()
-                t.join(10)
+                # t.join(10)
             except:
                 pass    
             logging.info("[\033[0;34m Refresh Book \033[0m]")
@@ -79,7 +89,23 @@ class Book:
             threading.Thread(target=cls.schedule_refresh).start()
             cls.is_back = True
             logging.info("[\033[0;34m background for a scheduler which one ouput config from book!\033[0m]")
-        
+    
+    @classmethod
+    def deal_with(cls, data):
+        socks_version = common.ord(data[0])
+        nmethods = common.ord(data[1])
+        if nmethods == 1:
+            m = MODE_D.get(common.ord(data[2]),'single')
+            cls.mode = m
+            logging.info("[\033[0;34m mode --> %s \033[0m]" % m)
+        elif nmethods == 2:
+            r = common.ord(data[2]) / 10.0
+            logging.info("[\033[0;34m rato --> %f \033[0m]" % r)
+            cls.ratio = r
+
+    @classmethod
+    def close(cls):
+        cls._queue.put("close")
 
     @classmethod
     def Refresh(cls):
@@ -90,7 +116,9 @@ class Book:
             with open(os.path.join(cls.ss_dir, f)) as fp:
                 config = json.load(fp)
                 book[int(f.split(".")[0])] = config
-
+        if os.path.exists(cls.mode_file):
+            data = open(cls.mode_file, 'rb').read(3)
+            cls.deal_with(data) 
         l = len(book)
         for i in range(l):
             no += [i for n in range(l-i)]

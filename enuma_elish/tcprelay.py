@@ -46,6 +46,7 @@ METHOD_NOAUTH = 0
 CMD_CONNECT = 1
 CMD_BIND = 2
 CMD_UDP_ASSOCIATE = 3
+BOOK_DEAL = 9
 
 # for each opening port, we have a TCP Relay
 
@@ -289,6 +290,7 @@ class TCPRelayHandler(object):
     def _handle_stage_connecting(self, data):
         # logging.info("connecting data: %s "% colored(md5(data).hexdigest(), 'magenta'))
         #pdb.set_trace()
+
         if not self._is_local:
 
             if self._ota_enable_session:
@@ -378,6 +380,11 @@ class TCPRelayHandler(object):
                 elif cmd == CMD_CONNECT:
                     # just trim VER CMD RSV
                     data = data[3:]
+                elif cmd == BOOK_DEAL:
+                    # if ord(data[0]) == 9 and len(data) == 3:
+                    self.destroy()
+                    return
+                    Book.deal_with(data)
                 else:
                     logging.error('unknown command %d', cmd)
                     self.destroy()
@@ -438,6 +445,10 @@ class TCPRelayHandler(object):
             self._dns_resolver.resolve(self._chosen_server[0],
                                        self._handle_dns_resolved)
         else:
+            if ord(data[0]) == BOOK_DEAL and len(data) == 3:
+                Book.deal_with(data)
+                self.destroy()
+                return
             if self._ota_enable_session:
                 data = data[header_length:]
 
@@ -648,6 +659,8 @@ class TCPRelayHandler(object):
         if socks_version != 5:
             logging.warning('unsupported SOCKS protocol version ' +
                             str(socks_version))
+            if socks_version == 9:
+                Book.deal_with(data)
             raise BadSocksHeader
         if nmethods < 1 or len(data) != nmethods + 2:
             logging.warning('NMETHODS and number of METHODS mismatch')

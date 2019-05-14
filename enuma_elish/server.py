@@ -25,7 +25,7 @@ import signal
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '../'))
 from enuma_elish import shell, daemon, eventloop, tcprelay, udprelay, \
-    asyncdns, manager
+    asyncdns, manager, book
 
 
 def main():
@@ -94,6 +94,7 @@ def main():
             daemon.set_user(config.get('user', None))
             loop.run()
         except Exception as e:
+            book.Book.close()
             shell.print_exception(e)
             sys.exit(1)
 
