@@ -158,30 +158,28 @@ class TCPRelayHandler(object):
         if is_local:
             self._chosen_server = self._get_a_server()
         else:
-            res = config.get("random", 0.4)
-            ss_dir = config.get("servers","/etc/shadowsocks")
-            self.book = Book(ss_dir)
+            res = config.get("random", 0.3)
             
-            if self.book.if_jump(res):
-            # if False:                
-                _config_tunnel = config.copy()
-                cc = self.book.get_server()
-                if cc:
-                    _config_tunnel.update(cc)
-                    logging.info("redirect -> %s " % _config_tunnel['server'])
-                    self._tunnel_mode = True
-                    self.en_c = 0
-                    self._config_tunnel = _config_tunnel
-                    # p = config['server_port']
-                    # if _config_tunnel['server_port'] == p:
-                    #     pp = (((p - 13000) + 1 ) % 8) +1
-                    #     pp_passwd = 'thefoolish' + str(pp)
-                    #     pp_port = 13000 + pp
-                    #     _config_tunnel['password'] = pp_passwd
-                    #     _config_tunnel['server_port'] = pp_port
-                    self._cryptor_tunnel = cryptor.Cryptor(_config_tunnel['password'],
-                                            _config_tunnel['method'],
-                                            _config_tunnel['crypto_path'])
+            Book.Background()
+            
+            _config_tunnel = config.copy()
+            cc = Book.GetServer(res)
+            if cc:
+                _config_tunnel.update(cc)
+                logging.info("redirect -> %s " % _config_tunnel['server'])
+                self._tunnel_mode = True
+                self.en_c = 0
+                self._config_tunnel = _config_tunnel
+                # p = config['server_port']
+                # if _config_tunnel['server_port'] == p:
+                #     pp = (((p - 13000) + 1 ) % 8) +1
+                #     pp_passwd = 'thefoolish' + str(pp)
+                #     pp_port = 13000 + pp
+                #     _config_tunnel['password'] = pp_passwd
+                #     _config_tunnel['server_port'] = pp_port
+                self._cryptor_tunnel = cryptor.Cryptor(_config_tunnel['password'],
+                                        _config_tunnel['method'],
+                                        _config_tunnel['crypto_path'])
 
                 
         fd_to_handlers[local_sock.fileno()] = self
@@ -644,6 +642,7 @@ class TCPRelayHandler(object):
         if len(data) < 3:
             logging.warning('method selection header too short')
             raise BadSocksHeader
+        logging.info(str(data))
         socks_version = common.ord(data[0])
         nmethods = common.ord(data[1])
         if socks_version != 5:
