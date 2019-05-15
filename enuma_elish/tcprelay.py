@@ -156,6 +156,7 @@ class TCPRelayHandler(object):
         self._forbidden_iplist = config.get('forbidden_ip')
         self._tunnel_mode = False
         self._tunnel_mode_init = False
+        self._tunnel_config_mode = False
         if is_local:
             self._chosen_server = self._get_a_server()
         else:
@@ -617,6 +618,10 @@ class TCPRelayHandler(object):
         self._ota_chunk_idx += 1
         return data_len + sha110 + data
 
+    def _handle_tunnel_config(self,if_ok):
+        if not self._is_local:
+            self._write_to_sock(data, self._local_sock)
+
     def _handle_stage_stream(self, data):
         if self._is_local:
             if self._ota_enable_session:
@@ -723,7 +728,9 @@ class TCPRelayHandler(object):
                 cmd = common.ord(data[0])
                 if cmd == BOOK_DEAL and data[1:6] == b'enuma':
                     # if ord(data[0]) == 9 and len(data) == 3:
-                    Book.deal_with(data)
+                    if Book.deal_with(data):
+                        self._tunnel_config_mode = True
+                        self._handle_tunnel_config(data)
                     return
 
         if self._stage == STAGE_STREAM:

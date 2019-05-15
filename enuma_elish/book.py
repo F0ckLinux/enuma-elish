@@ -6,7 +6,7 @@ import threading
 import sys
 import logging
 from enuma_elish import common, cryptor
-
+import socket
 if sys.version[0] == '3':
     from queue import Queue
 else:
@@ -98,10 +98,13 @@ class Book:
             m = MODE_D.get(common.ord(data[7]),'single')
             cls.mode = m
             logging.info("[\033[0;34m mode --> %s \033[0m]" % m)
+            return True
         elif nmethods == 2:
             r = common.ord(data[7]) / 10.0
             logging.info("[\033[0;34m rato --> %f \033[0m]" % r)
             cls.ratio = r
+            return True
+        return False
 
     @classmethod
     def close(cls):
@@ -124,6 +127,17 @@ class Book:
             return data
         except:
             return b'failed'
+
+    @classmethod
+    def changeMode(cls, ip,port, mode, password, method='aes-256-cfb',**opts):
+        data = b'\x09' + 'enuma'.encode('utf-8') + b'\x01' + chr(mode % 3).encode()
+        return cls.SendCode(ip, port, data, password, method=method, **opts)
+
+    @classmethod
+    def changeRatio(cls, ip,port, ratio, password, method='aes-256-cfb',**opts):
+        data = b'\x09' + 'enuma'.encode('utf-8') + b'\x02' + chr(mode).encode()
+        return cls.SendCode(ip, port, data, password, method=method, **opts)
+
 
     @classmethod
     def Refresh(cls):
