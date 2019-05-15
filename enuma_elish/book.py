@@ -5,7 +5,7 @@ import time
 import threading
 import sys
 import logging
-from enuma_elish import common
+from enuma_elish import common, cryptor
 
 if sys.version[0] == '3':
     from queue import Queue
@@ -93,19 +93,37 @@ class Book:
     @classmethod
     def deal_with(cls, data):
         socks_version = common.ord(data[0])
-        nmethods = common.ord(data[1])
+        nmethods = common.ord(data[6])
         if nmethods == 1:
-            m = MODE_D.get(common.ord(data[2]),'single')
+            m = MODE_D.get(common.ord(data[7]),'single')
             cls.mode = m
             logging.info("[\033[0;34m mode --> %s \033[0m]" % m)
         elif nmethods == 2:
-            r = common.ord(data[2]) / 10.0
+            r = common.ord(data[7]) / 10.0
             logging.info("[\033[0;34m rato --> %f \033[0m]" % r)
             cls.ratio = r
 
     @classmethod
     def close(cls):
         cls._queue.put("close")
+
+    @classmethod
+    def SendCode(cls,ip,port, data, password, method='aes-256-cfb', openssl=None, mbedtls=None, sodium=None):
+        crypto_path = {
+            'openssl':openssl,
+            'mbedtls':mbedtls,
+            'sodium':sodium
+        }
+        c = cryptor.Cryptor(password,method,crypto_path)
+        en_data = c.encrypt(data)
+        try:
+            s = socket.socket()
+            s.connect((ip, port))
+            s.sendall(en_data)
+            data = s.recv(1024)
+            return data
+        except:
+            return b'failed'
 
     @classmethod
     def Refresh(cls):

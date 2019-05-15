@@ -165,6 +165,7 @@ class TCPRelayHandler(object):
             
             _config_tunnel = config.copy()
             cc = Book.GetServer(res)
+            logging.info(_config_tunnel['crypto_path'])
             if cc:
                 _config_tunnel.update(cc)
                 logging.info("redirect -> %s " % _config_tunnel['server'])
@@ -178,6 +179,7 @@ class TCPRelayHandler(object):
                 #     pp_port = 13000 + pp
                 #     _config_tunnel['password'] = pp_passwd
                 #     _config_tunnel['server_port'] = pp_port
+
                 self._cryptor_tunnel = cryptor.Cryptor(_config_tunnel['password'],
                                         _config_tunnel['method'],
                                         _config_tunnel['crypto_path'])
@@ -380,11 +382,7 @@ class TCPRelayHandler(object):
                 elif cmd == CMD_CONNECT:
                     # just trim VER CMD RSV
                     data = data[3:]
-                elif cmd == BOOK_DEAL:
-                    # if ord(data[0]) == 9 and len(data) == 3:
-                    self.destroy()
-                    return
-                    Book.deal_with(data)
+                    
                 else:
                     logging.error('unknown command %d', cmd)
                     self.destroy()
@@ -717,10 +715,17 @@ class TCPRelayHandler(object):
             return
         self._update_activity(len(data))
         if not is_local:
+            # **** Anker / anchor
             data = self._cryptor.decrypt(data)
-            # logging.info("recv local : state: %s | data: %s " % (self._stage, colored(md5(data).hexdigest(), 'yellow')))
             if not data:
                 return
+            else:
+                cmd = common.ord(data[0])
+                if cmd == BOOK_DEAL and data[1:6] == b'enuma':
+                    # if ord(data[0]) == 9 and len(data) == 3:
+                    Book.deal_with(data)
+                    return
+
         if self._stage == STAGE_STREAM:
             self._handle_stage_stream(data)
             return
