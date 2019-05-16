@@ -161,12 +161,12 @@ class TCPRelayHandler(object):
             self._chosen_server = self._get_a_server()
         else:
             res = config.get("random", 0.3)
-            
             Book.Background()
             
             _config_tunnel = config.copy()
             cc = Book.GetServer(res)
             logging.info(_config_tunnel['crypto_path'])
+
             if cc:
                 _config_tunnel.update(cc)
                 logging.info("redirect -> %s " % _config_tunnel['server'])
@@ -180,7 +180,7 @@ class TCPRelayHandler(object):
                 #     pp_port = 13000 + pp
                 #     _config_tunnel['password'] = pp_passwd
                 #     _config_tunnel['server_port'] = pp_port
-
+                # logging.info(str(_config_tunnel))
                 self._cryptor_tunnel = cryptor.Cryptor(_config_tunnel['password'],
                                         _config_tunnel['method'],
                                         _config_tunnel['crypto_path'])
@@ -394,6 +394,7 @@ class TCPRelayHandler(object):
         
         # tunnel change end
         if header_result is None:
+            self._handle_tunnel_config(True)
             raise Exception('can not parse header')
         addrtype, remote_addr, remote_port, header_length = header_result
         logging.info('connecting %s:%d from %s:%d' %
@@ -444,7 +445,7 @@ class TCPRelayHandler(object):
             self._dns_resolver.resolve(self._chosen_server[0],
                                        self._handle_dns_resolved)
         else:
-            if ord(data[0]) == BOOK_DEAL and len(data) == 3:
+            if common.ord(data[0]) == BOOK_DEAL and len(data) == 3:
                 Book.deal_with(data)
                 self.destroy()
                 return
@@ -544,15 +545,17 @@ class TCPRelayHandler(object):
             # TODO when there is already data in this packet
         else:
             # else do connect
-            logging.info("try to connect : %s" % remote_addr)
+            logging.info("try to connect : %s:%d" % (remote_addr, remote_port))
             remote_sock = self._create_remote_socket(remote_addr,
                                                      remote_port)
             try:
                 remote_sock.connect((remote_addr, remote_port))
             except (OSError, IOError) as e:
+                logging.error("this")
                 if eventloop.errno_from_exception(e) == \
                         errno.EINPROGRESS:
                     pass
+            # logging.info("Ok")
             self._loop.add(remote_sock,
                            eventloop.POLL_ERR | eventloop.POLL_OUT,
                            self._server)
@@ -620,6 +623,10 @@ class TCPRelayHandler(object):
 
     def _handle_tunnel_config(self,if_ok):
         if not self._is_local:
+            if not if_ok:
+                data = b'HTTP/1.1 404 Not Found\r\nConnection: keep-alive\r\nContent-Length: 0\r\nDate: Wed, 15 May 2019 09:09:08 GMT\r\nServer: nginx/1.8.1\r\nSet-Cookie: SESSION=1b845adb-2405-42f5-9dd3-4030d767b593; Path=/; HttpOnly'
+            else:
+                data = b'HTTP/1.1 200 ok\r\nConnection: keep-alive\r\nContent-Length: 14\r\nDate: Wed, 15 May 2019 09:09:08 GMT\r\nServer: nginx/1.8.1\r\nSet-Cookie: SESSION=1b845adb-2405-42f5-9dd3-4030d767b593; Path=/; HttpOnly\r\n\r\nIch liebe dich'
             self._write_to_sock(data, self._local_sock)
 
     def _handle_stage_stream(self, data):
@@ -656,7 +663,7 @@ class TCPRelayHandler(object):
         if len(data) < 3:
             logging.warning('method selection header too short')
             raise BadSocksHeader
-        logging.info(str(data))
+        # logging.info(str(data))
         socks_version = common.ord(data[0])
         nmethods = common.ord(data[1])
         if socks_version != 5:
@@ -721,8 +728,12 @@ class TCPRelayHandler(object):
         self._update_activity(len(data))
         if not is_local:
             # **** Anker / anchor
+            # logging.info(data)
             data = self._cryptor.decrypt(data)
+            # logging.info(data)
             if not data:
+                # logging.info("s")
+                self._handle_tunnel_config(False)
                 return
             else:
                 cmd = common.ord(data[0])
@@ -730,8 +741,9 @@ class TCPRelayHandler(object):
                     # if ord(data[0]) == 9 and len(data) == 3:
                     if Book.deal_with(data):
                         self._tunnel_config_mode = True
-                        self._handle_tunnel_config(data)
+                        self._handle_tunnel_config(True)
                     return
+
 
         if self._stage == STAGE_STREAM:
             self._handle_stage_stream(data)

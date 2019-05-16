@@ -29,6 +29,7 @@ from functools import wraps
 
 from enuma_elish.common import to_bytes, to_str, IPNetwork
 from enuma_elish import cryptor
+from enuma_elish import book
 
 
 VERBOSE_LEVEL = 5
@@ -213,7 +214,8 @@ def check_config(config, is_local):
 
 def get_config(is_local):
     global verbose
-
+    set_book_mode = None
+    set_book_dir = None
     logging.basicConfig(level=logging.INFO,
                         format='%(levelname)-s: %(message)s')
     if is_local:
@@ -224,7 +226,7 @@ def get_config(is_local):
         shortopts = 'hd:s:p:k:m:c:t:vqa'
         longopts = ['help', 'fast-open', 'pid-file=', 'log-file=', 'workers=',
                     'forbidden-ip=', 'user=', 'manager-address=', 'version',
-                    'libopenssl=', 'libmbedtls=', 'libsodium=', 'prefer-ipv6']
+                    'libopenssl=', 'libmbedtls=', 'libsodium=', 'prefer-ipv6','switch-mode=','ss-dir=']
     try:
         config_path = find_config()
         optlist, args = getopt.getopt(sys.argv[1:], shortopts, longopts)
@@ -304,6 +306,12 @@ def get_config(is_local):
                 config['verbose'] = v_count
             elif key == '--prefer-ipv6':
                 config['prefer_ipv6'] = True
+            elif key == '--switch-mode':
+                set_book_mode = int(value)
+            elif key == '--ss-dir':
+                set_book_dir = to_str(value)
+                
+
     except getopt.GetoptError as e:
         print(e, file=sys.stderr)
         print_help(is_local)
@@ -351,11 +359,29 @@ def get_config(is_local):
         level = logging.INFO
     verbose = config['verbose']
     logging.basicConfig(level=level,
-                        format='%(asctime)s %(levelname)-8s %(message)s',
+                        format='%(asctime)s %(levelname)-8s %(message)s %(lineno)d',
                         datefmt='%Y-%m-%d %H:%M:%S')
 
     check_config(config, is_local)
+    if set_book_mode is not None:
+        ip = config['server']
+        port = config['server_port']
+        method = config['method']
+        pwd = config['password']
+        logging.info(book.Book.changeMode(ip,port,set_book_mode, pwd, method=method))
+        sys.exit(0)
 
+    # print(set_book_dir)
+    if set_book_dir is not None:
+        ip = config['server']
+        port = config['server_port']
+        method = config['method']
+        pwd = config['password']
+        logging.info(book.Book.changeDir(ip, port, set_book_dir, pwd, method=method))
+        sys.exit(0)
+
+    if not is_local:
+        book.Book.Background()
     return config
 
 
@@ -465,6 +491,8 @@ Proxy options:
   --libopenssl=PATH      custom openssl crypto lib path
   --libmbedtls=PATH      custom mbedtls crypto lib path
   --libsodium=PATH       custom sodium crypto lib path
+  --switch-mode=int      0:single, 1:flow , 2:random 3:auto
+  --ss-dir=PATH          set ss config's dir . for advantage mode
 
 General options:
   -h, --help             show this help message and exit
