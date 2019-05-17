@@ -49,7 +49,7 @@ class Book:
     now_use = 0
     is_back = False
     ratio = 0.3
-    mode_file = os.path.join('/tmp/', os.urandom(8).hex())
+    
 
     if not os.path.exists(ss_dir):
         os.mkdir(ss_dir)
@@ -229,9 +229,6 @@ class Book:
         if os.path.isdir(os.path.expanduser('~/.config')):
             book.update(cls.scan(os.path.expanduser('~/.config')))
     
-        if os.path.exists(cls.mode_file):
-            data = open(cls.mode_file, 'rb').read(3)
-            cls.deal_with(data) 
         l = len(book)
         for i in range(l):
             no += [i for n in range(l-i)]
