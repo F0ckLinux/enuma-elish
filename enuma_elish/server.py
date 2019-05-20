@@ -75,6 +75,8 @@ def main():
         udp_servers.append(udprelay.UDPRelay(a_config, dns_resolver, False))
 
     def run_server():
+        if 'daemon' in config:
+            book.Book.Background()
         def child_handler(signum, _):
             logging.warn('received SIGQUIT, doing graceful shutting down..')
             list(map(lambda s: s.close(next_tick=True),
@@ -83,6 +85,7 @@ def main():
                       child_handler)
 
         def int_handler(signum, _):
+            book.Book.close()
             sys.exit(1)
         signal.signal(signal.SIGINT, int_handler)
 

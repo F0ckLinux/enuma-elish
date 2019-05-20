@@ -7,9 +7,12 @@ import sys
 import logging
 from enuma_elish import common, cryptor
 import socket
+from base64 import b64decode
+PY=3
 if sys.version[0] == '3':
     from queue import Queue
 else:
+    PY=2
     from Queue import Queue
 DEBUG = False
 
@@ -36,12 +39,23 @@ MODE_D = {
     0:'single'
 }
 
+def byteify(input, encoding='utf-8'):
+    if isinstance(input, dict):
+        return {byteify(key): byteify(value) for key, value in input.iteritems()}
+    elif isinstance(input, list):
+        return [byteify(element) for element in input]
+    elif isinstance(input, unicode):
+        return input.encode(encoding)
+    else:
+        return input
+
 class Book:
     _book = {}
     _no = []
     _sort_book = []
     _if_init = False
     _last = None
+    _err = []
     ss_dir= '/etc/shadowsocks'
     interval = 60
     _queue = Queue(10)
@@ -96,7 +110,9 @@ class Book:
     @classmethod
     def Background(cls):
         if not cls.is_back:
-            threading.Thread(target=cls.schedule_refresh).start()
+            t_daemon = threading.Thread(target=cls.schedule_refresh)
+            t_daemon.daemon = True
+            t_daemon.start()
             cls.is_back = True
             logging.info("[\033[0;34m background for a scheduler which one ouput config from book!\033[0m]")
     
@@ -121,12 +137,35 @@ class Book:
                 cls.ss_dir = dir_name
                 logging.info("[\033[0;34m dir --> %s \033[0m]" % dir_name)
                 return True
-        return False
+        elif nmethods == 4:
+            data = data[7:].decode().strip()
+            if data.startswith('ss://'):
+                data = data.replace("ss://",'').split("#")[0]
+                if PY == 3:
+                    data = data.encode()
+                c = b64decode(data)
+                if PY == 3:
+                    c = c.decode()
+                method,pwdip,s_port = c.split(":")
+                pwd,ip = pwdip.split("@")
+                cls._book = {}
+                cls._sort_book = []
+                cls._book[ip] = {
+                    'server': ip,
+                    'server_port':s_port,
+                    'method': method,
+                    'password':pwd
+                }
+
+                logging.info("[\033[0;34m ss --> %s \033[0m]" % c)
+                # return 
+        return True
 
     @classmethod
     def test_config(cls):
         sec = [i for i in cls._book]
         sort_keys = {}
+        slow_t = 0
         for k in sec:
             config = cls._book[k]
             ip = config['server']
@@ -134,16 +173,22 @@ class Book:
             st = time.time()
             try:
                 s = socket.socket()
-                s.connect((ip, port))
-                sort_keys[k] = time.time() - st
-            except:
-                logging.info("[\033[0;34m del %s \033[0m]" % k)
-                del cls._book[k]
+                s.connect((ip, int(port)))
+                et = time.time() - st
+                if et > slow_t:
+                    slow_t = et
+                if ip in cls._err:
+                    et += (slow_t//2)
+                sort_keys[k] = et
+            except Exception as e:
+                if k in cls._book:
+                    logging.info("[\033[0;34m del %s \033[0m]" % k)
+                    del cls._book[k]
          
         s = sorted(sort_keys,key= lambda x: sort_keys[x])
         # import pdb; pdb.set_trace()
         if len(s) > 0:
-            logging.info('[\033[0;34m most fast: %s \033[0m]' % s[0])
+            logging.info('[\033[0;34m most fast: %s num: %d \033[0m]' % (s[0], len(cls._book)))
         cls._sort_book = s
 
     @classmethod
@@ -184,6 +229,12 @@ class Book:
         return cls.SendCode(ip, port, data, password, method=method, **opts)
 
     @classmethod
+    def linkOther(cls, ip,port, ss_str, password, method='aes-256-cfb',**opts):
+        data = b'\x09' + 'enuma'.encode('utf-8') + b'\x04' + ss_str.encode()
+        return cls.SendCode(ip, port, data, password, method=method, **opts)
+
+
+    @classmethod
     def chk(cls,conf):
         if 'server' not in conf or 'server_port' not in conf:
             return False
@@ -202,9 +253,11 @@ class Book:
                     with open(ff) as fp:
                         try:
                             config = json.load(fp)
+                            if PY == 2:
+                                config = byteify(config)
                             if cls.chk(config):
                                 book[f] = config
-                        except:
+                        except Exception as e:
                             logging.info("[\033[0;35m load error: %s \033[0m]" % f)
         return book
 
@@ -220,6 +273,9 @@ class Book:
             with open(os.path.join(cls.ss_dir, f)) as fp:
                 try:
                     config = json.load(fp)
+                    if PY == 2:
+                        config = byteify(config)
+
                     if cls.chk(config): 
                 # logging.info(str(config))
                         book[f] = config
@@ -289,7 +345,7 @@ class Book:
                 return None
             return None
         elif cls.mode.strip() == 'single':
-            sec = [i for i in cls._book ]
+            sec = [i.decode() if PY ==2 else i for i in cls._book ]
             if len(cls._book) > 0:
                 # logging.info('single: 1')
                 return cls._book[sec[0]]
@@ -298,15 +354,19 @@ class Book:
             sec = []
             l = len(cls._sort_book)
             for i,v in enumerate(cls._sort_book):
-                [sec.append(v) for i in range(l- i)]
+                if PY == 2:
+                    [sec.append(v.decode()) for i in range(l- i)]
+                else:
+                    [sec.append(v) for i in range(l- i)]
             if len(sec) == 0:
-                sec = list(cls._book.keys())
+                sec = [i.decode() if PY ==2 else i for i in cls._book ]
             try:
                 n = random.choice(sec)
                 if n in cls._book:
                     cls._last = n
                     return cls._book[n]
             except IndexError:
+                logging.info([sec, cls._book])
                 return None
             return None
         else:

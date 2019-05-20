@@ -216,6 +216,7 @@ def get_config(is_local):
     global verbose
     set_book_mode = None
     set_book_dir = None
+    set_link = None
     logging.basicConfig(level=logging.INFO,
                         format='%(levelname)-s: %(message)s')
     if is_local:
@@ -226,7 +227,7 @@ def get_config(is_local):
         shortopts = 'hd:s:p:k:m:c:t:vqa'
         longopts = ['help', 'fast-open', 'pid-file=', 'log-file=', 'workers=',
                     'forbidden-ip=', 'user=', 'manager-address=', 'version',
-                    'libopenssl=', 'libmbedtls=', 'libsodium=', 'prefer-ipv6','switch-mode=','ss-dir=']
+                    'libopenssl=', 'libmbedtls=', 'libsodium=', 'prefer-ipv6','switch-mode=','ss-dir=', 'link=']
     try:
         config_path = find_config()
         optlist, args = getopt.getopt(sys.argv[1:], shortopts, longopts)
@@ -310,7 +311,9 @@ def get_config(is_local):
                 set_book_mode = int(value)
             elif key == '--ss-dir':
                 set_book_dir = to_str(value)
-                
+            
+            elif key == '--link':
+                set_link = to_str(value)
 
     except getopt.GetoptError as e:
         print(e, file=sys.stderr)
@@ -359,7 +362,7 @@ def get_config(is_local):
         level = logging.INFO
     verbose = config['verbose']
     logging.basicConfig(level=level,
-                        format='%(asctime)s %(levelname)-8s %(message)s %(lineno)d',
+                        format='%(asctime)s %(levelname)-8s %(message)s %(lineno)d|%(filename)s',
                         datefmt='%Y-%m-%d %H:%M:%S')
 
     check_config(config, is_local)
@@ -380,10 +383,17 @@ def get_config(is_local):
         logging.info(book.Book.changeDir(ip, port, set_book_dir, pwd, method=method))
         sys.exit(0)
 
-    if not is_local:
+    if set_link is not None:
+        ip = config['server']
+        port = config['server_port']
+        method = config['method']
+        pwd = config['password']
+        logging.info(book.Book.linkOther(ip, port, set_link, pwd, method=method))
+        sys.exit(0)
+
+    if not is_local and not 'daemon' in config:
         book.Book.Background()
     return config
-
 
 def print_help(is_local):
     if is_local:

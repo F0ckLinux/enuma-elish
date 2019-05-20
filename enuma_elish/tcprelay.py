@@ -165,7 +165,7 @@ class TCPRelayHandler(object):
             
             _config_tunnel = config.copy()
             cc = Book.GetServer(res)
-            logging.info(_config_tunnel['crypto_path'])
+            logging.info(cc)
 
             if cc:
                 _config_tunnel.update(cc)
@@ -181,6 +181,7 @@ class TCPRelayHandler(object):
                 #     _config_tunnel['password'] = pp_passwd
                 #     _config_tunnel['server_port'] = pp_port
                 # logging.info(str(_config_tunnel))
+                #import pdb; pdb.set_trace()
                 self._cryptor_tunnel = cryptor.Cryptor(_config_tunnel['password'],
                                         _config_tunnel['method'],
                                         _config_tunnel['crypto_path'])
@@ -445,10 +446,12 @@ class TCPRelayHandler(object):
             self._dns_resolver.resolve(self._chosen_server[0],
                                        self._handle_dns_resolved)
         else:
+            # logging.info("H1")
             if common.ord(data[0]) == BOOK_DEAL and len(data) == 3:
                 Book.deal_with(data)
                 self.destroy()
                 return
+            # logging.info("H2")
             if self._ota_enable_session:
                 data = data[header_length:]
 
@@ -545,13 +548,17 @@ class TCPRelayHandler(object):
             # TODO when there is already data in this packet
         else:
             # else do connect
-            logging.info("try to connect : %s:%d" % (remote_addr, remote_port))
+            if not isinstance(remote_port, int):
+                remote_port = int(remote_port)
+            logging.info("try to connect : %s:%s" % (remote_addr, remote_port))
             remote_sock = self._create_remote_socket(remote_addr,
                                                      remote_port)
             try:
                 remote_sock.connect((remote_addr, remote_port))
             except (OSError, IOError) as e:
-                logging.error("this")
+                # logging.error("os error")
+                if remote_addr not in Book._err:
+                    Book._err.append(remote_addr)
                 if eventloop.errno_from_exception(e) == \
                         errno.EINPROGRESS:
                     pass
@@ -663,7 +670,7 @@ class TCPRelayHandler(object):
         if len(data) < 3:
             logging.warning('method selection header too short')
             raise BadSocksHeader
-        # logging.info(str(data))
+        # logging.info('h3')
         socks_version = common.ord(data[0])
         nmethods = common.ord(data[1])
         if socks_version != 5:
@@ -736,12 +743,15 @@ class TCPRelayHandler(object):
                 self._handle_tunnel_config(False)
                 return
             else:
+                # logging.info("h2")
                 cmd = common.ord(data[0])
                 if cmd == BOOK_DEAL and data[1:6] == b'enuma':
                     # if ord(data[0]) == 9 and len(data) == 3:
                     if Book.deal_with(data):
                         self._tunnel_config_mode = True
                         self._handle_tunnel_config(True)
+                    else:
+                        self._handle_tunnel_config(False)
                     return
 
 
