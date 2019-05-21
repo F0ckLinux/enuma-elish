@@ -64,7 +64,7 @@ To check the log:
 License
 -------
 
-Copyright 2018 qingluan
+Copyright 2018 f0cklinux
 
 Licensed under the Gnu License 2.0 (the "License"); you may
 not use this file except in compliance with the License. You may obtain
