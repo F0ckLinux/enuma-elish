@@ -222,7 +222,12 @@ class Book:
             data = data[7:].decode().strip()
             if data == "check":
                 L_info("check routes")
-                return cls._book
+                return {
+                    'routes':list(cls._book.values()),
+                    'interval':cls.interval,
+                    'jump-ratio':cls.ratio,
+                    'sort_keys': cls._sort_book
+                }
             elif data.startswith('set-interval'):
                 data = int(data[len('set-interval'):].strip())
                 cls.interval = data
