@@ -383,19 +383,15 @@ def get_config(is_local):
                         datefmt='%Y-%m-%d %H:%M:%S')
 
     check_config(config, is_local)
+    # print(set_book_dir)
+    ip = config.get('server')
+    port = config.get('server_port')
+    method = config.get('method')
+    pwd = config.get('password')
+
     if set_book_mode is not None:
-        ip = config['server']
-        port = config['server_port']
-        method = config['method']
-        pwd = config['password']
         logging.info(book.Book.changeMode(ip,port,set_book_mode, pwd, method=method))
         sys.exit(0)
-
-    # print(set_book_dir)
-    ip = config['server']
-    port = config['server_port']
-    method = config['method']
-    pwd = config['password']
 
     if set_book_dir is not None:
         print(book.Book.changeDir(ip, port, set_book_dir, pwd, method=method))
