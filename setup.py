@@ -6,8 +6,8 @@ with codecs.open('README.rst', encoding='utf-8') as f:
     long_description = f.read()
 
 setup(
-    name="x-mroy-9",
-    version="0.0.2",
+    name="enuma-elish",
+    version="0.0.0",
     # license='http://www.apache.org/licenses/LICENSE-2.0',
     description="A fast tunnel proxy  extension from ss ,which help you get through firewalls",
     author='x-mroy',

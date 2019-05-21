@@ -8,6 +8,7 @@ import logging
 from enuma_elish import common, cryptor
 import socket
 from base64 import b64decode
+from time import strftime, gmtime
 PY=3
 if sys.version[0] == '3':
     from queue import Queue
@@ -39,6 +40,9 @@ MODE_D = {
     0:'single'
 }
 
+def L_info(msg):
+    logging.info("[\033[0;35m %s \033[0m]" % msg)
+
 def byteify(input, encoding='utf-8'):
     if isinstance(input, dict):
         return {byteify(key): byteify(value) for key, value in input.iteritems()}
@@ -48,6 +52,39 @@ def byteify(input, encoding='utf-8'):
         return input.encode(encoding)
     else:
         return input
+
+class Responde:
+    E = b'HTTP/1.1 404 Not Found\r\nConnection: keep-alive\r\nContent-Length: 0\r\nDate: %s\r\nServer: nginx/1.8.1\r\nSet-Cookie: SESSION=1b845adb-2405-42f5-9dd3-4030d767b593; Path=/; HttpOnly'
+    H = b'HTTP/1.1 200 ok\r\nConnection: keep-alive\r\nContent-Length: %d\r\nDate: %s\r\nServer: nginx/1.8.1\r\nSet-Cookie: SESSION=1b845adb-2405-42f5-9dd3-4030d767b593%s; Path=/; HttpOnly\r\n\r\n'
+
+
+    @classmethod
+    def base(cls, content='',en=False):
+        e_tag = b''
+        if en:
+            e_tag = b'SecD'
+
+        T = strftime("%a, %d %b %Y %H:%M:%S +0000", gmtime())
+        if isinstance(content, str):
+            content = content.encode()
+        if en:
+            content = en.encrypt(content)
+        return cls.H % (len(content), T.encode(), e_tag) + content 
+
+
+    @classmethod
+    def no(cls):
+        return cls.E % strftime("%a, %d %b %Y %H:%M:%S +0000", gmtime()) 
+
+    @classmethod
+    def ok(cls):
+        return cls.base('Ich liebe dich!')
+
+    @classmethod
+    def json(cls, kargs, encryptor):
+        if isinstance(kargs, dict):
+            return cls.base(json.dumps(kargs), en=encryptor)
+        return cls.ok()
 
 class Book:
     _book = {}
@@ -158,8 +195,47 @@ class Book:
                 }
 
                 logging.info("[\033[0;34m ss --> %s \033[0m]" % c)
-                # return 
-        return True
+                return True
+        elif nmethods == 5:
+            data = data[7:].decode().strip()
+            if data.startswith('ss://'):
+                data = data.replace("ss://",'').split("#")[0]
+                if PY == 3:
+                    data = data.encode()
+                c = b64decode(data)
+                if PY == 3:
+                    c = c.decode()
+                method,pwdip,s_port = c.split(":")
+                pwd,ip = pwdip.split("@")
+                # cls._book = {}
+                # cls._sort_book = []
+                cls._book[ip] = {
+                    'server': ip,
+                    'server_port':s_port,
+                    'method': method,
+                    'password':pwd
+                }
+
+                logging.info("[\033[0;34m + %s \033[0m]" % c)
+                return True
+        elif nmethods == 6:
+            data = data[7:].decode().strip()
+            if data == "check":
+                L_info("check routes")
+                return cls._book
+            elif data.startswith('set-interval'):
+                data = int(data[len('set-interval'):].strip())
+                cls.interval = data
+                L_info("set-interval : %d " % data)
+                return "set-interval : %d" % data
+            elif data.startswith('jump-ratio'):
+                data = float(data[len('jump-ratio'):].strip())
+                cls.ratio = data
+                L_info('jump-ratio: %f%%' % ((1-data) * 100))
+                return 'jump-ratio: %f%%' % ((1-data) * 100)
+                
+                
+        return False
 
     @classmethod
     def test_config(cls):
@@ -208,9 +284,17 @@ class Book:
             s = socket.socket()
             s.connect((ip, port))
             s.sendall(en_data)
-            data = s.recv(1024)
+            data = s.recv(31024)
+            tag = 'SecD'
+            if PY == 3:
+                tag = b'SecD'
+
+            if tag in data:
+                data = data.split(b"\r\n\r\n",1)[1]
+                return c.decrypt(data)
             return data
-        except:
+        except Exception as e:
+            logging.error(e)
             return b'failed'
 
     @classmethod
@@ -231,6 +315,26 @@ class Book:
     @classmethod
     def linkOther(cls, ip,port, ss_str, password, method='aes-256-cfb',**opts):
         data = b'\x09' + 'enuma'.encode('utf-8') + b'\x04' + ss_str.encode()
+        return cls.SendCode(ip, port, data, password, method=method, **opts)
+
+    @classmethod
+    def addRoute(cls, ip,port, ss_str, password, method='aes-256-cfb',**opts):
+        data = b'\x09' + 'enuma'.encode('utf-8') + b'\x05' + ss_str.encode()
+        return cls.SendCode(ip, port, data, password, method=method, **opts)
+
+    @classmethod
+    def checkRoutes(cls, ip,port, password, method='aes-256-cfb',**opts):
+        data = b'\x09' + 'enuma'.encode('utf-8') + b'\x06check'
+        return cls.SendCode(ip, port, data, password, method=method, **opts)
+
+    @classmethod
+    def refreshTime(cls, ip,port, time, password, method='aes-256-cfb',**opts):
+        data = b'\x09' + 'enuma'.encode('utf-8') + b'\x06set-interval' + str(time).encode()
+        return cls.SendCode(ip, port, data, password, method=method, **opts)
+
+    @classmethod
+    def jumpRatio(cls, ip,port, ratio, password, method='aes-256-cfb',**opts):
+        data = b'\x09' + 'enuma'.encode('utf-8') + b'\x06jump-ratio' + str(ratio).encode()
         return cls.SendCode(ip, port, data, password, method=method, **opts)
 
 
@@ -332,7 +436,8 @@ class Book:
 
 
     @classmethod
-    def GetServer(cls, rato=0.3):
+    def GetServer(cls):
+        rato=cls.ratio
         if cls.mode.strip() == 'random':
             sec = [i for i in cls._book if i != cls._last]
             try:
@@ -366,7 +471,7 @@ class Book:
                     cls._last = n
                     return cls._book[n]
             except IndexError:
-                logging.info([sec, cls._book])
+                L_info("may be no book: %d " % len(cls._book))
                 return None
             return None
         else:

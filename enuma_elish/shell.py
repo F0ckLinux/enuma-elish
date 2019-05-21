@@ -217,6 +217,10 @@ def get_config(is_local):
     set_book_mode = None
     set_book_dir = None
     set_link = None
+    set_add_link = None
+    set_routes = None
+    set_interval = None
+    set_jump_ratio = None
     logging.basicConfig(level=logging.INFO,
                         format='%(levelname)-s: %(message)s')
     if is_local:
@@ -227,7 +231,9 @@ def get_config(is_local):
         shortopts = 'hd:s:p:k:m:c:t:vqa'
         longopts = ['help', 'fast-open', 'pid-file=', 'log-file=', 'workers=',
                     'forbidden-ip=', 'user=', 'manager-address=', 'version',
-                    'libopenssl=', 'libmbedtls=', 'libsodium=', 'prefer-ipv6','switch-mode=','ss-dir=', 'link=']
+                    'libopenssl=', 'libmbedtls=', 'libsodium=', 'prefer-ipv6',
+                    'switch-mode=','ss-dir=', 'link=', 'add-link=','interval=',
+                    'routes','jump-ratio=']
     try:
         config_path = find_config()
         optlist, args = getopt.getopt(sys.argv[1:], shortopts, longopts)
@@ -307,13 +313,21 @@ def get_config(is_local):
                 config['verbose'] = v_count
             elif key == '--prefer-ipv6':
                 config['prefer_ipv6'] = True
+            
             elif key == '--switch-mode':
                 set_book_mode = int(value)
             elif key == '--ss-dir':
                 set_book_dir = to_str(value)
-            
             elif key == '--link':
                 set_link = to_str(value)
+            elif key == '--add-link':
+                set_add_link = to_str(value)
+            elif key == '--routes':
+                set_routes = True
+            elif key == '--interval':
+                set_interval = to_str(value)
+            elif key == '--jump-ratio':
+                set_jump_ratio = to_str(value)
 
     except getopt.GetoptError as e:
         print(e, file=sys.stderr)
@@ -361,6 +375,9 @@ def get_config(is_local):
     else:
         level = logging.INFO
     verbose = config['verbose']
+    if set_add_link or set_link or set_routes or set_book_dir or set_book_mode:
+        level = logging.ERROR
+    
     logging.basicConfig(level=level,
                         format='%(asctime)s %(levelname)-8s %(message)s %(lineno)d|%(filename)s',
                         datefmt='%Y-%m-%d %H:%M:%S')
@@ -375,20 +392,33 @@ def get_config(is_local):
         sys.exit(0)
 
     # print(set_book_dir)
+    ip = config['server']
+    port = config['server_port']
+    method = config['method']
+    pwd = config['password']
+
     if set_book_dir is not None:
-        ip = config['server']
-        port = config['server_port']
-        method = config['method']
-        pwd = config['password']
-        logging.info(book.Book.changeDir(ip, port, set_book_dir, pwd, method=method))
+        print(book.Book.changeDir(ip, port, set_book_dir, pwd, method=method))
         sys.exit(0)
 
     if set_link is not None:
-        ip = config['server']
-        port = config['server_port']
-        method = config['method']
-        pwd = config['password']
-        logging.info(book.Book.linkOther(ip, port, set_link, pwd, method=method))
+        print(book.Book.linkOther(ip, port, set_link, pwd, method=method))
+        sys.exit(0)
+
+    if set_add_link is not None:
+        print(book.Book.addRoute(ip, port, set_add_link, pwd, method=method))
+        sys.exit(0)
+
+    if set_routes is not None:
+        print(book.Book.checkRoutes(ip, port, pwd, method=method))
+        sys.exit(0)
+
+    if set_interval is not None:
+        print(book.Book.refreshTime(ip, port, set_interval, pwd, method=method))
+        sys.exit(0)
+
+    if set_jump_ratio is not None:
+        print(book.Book.jumpRatio(ip,port, set_jump_ratio, pwd, method=method))
         sys.exit(0)
 
     if not is_local and not 'daemon' in config:
@@ -503,6 +533,11 @@ Proxy options:
   --libsodium=PATH       custom sodium crypto lib path
   --switch-mode=int      0:single, 1:flow , 2:random 3:auto
   --ss-dir=PATH          set ss config's dir . for advantage mode
+  --link=ss://b64        set ssserver link to other ss route. like ss://YWVzLTI1Ni1jZmI6YWJjQDEyNy4wLjAuMToxMTIzNA==#local
+  --add-route=s://b64    add ssserver link to other ss route. like ss://YWVzLTI1Ni1jZmI6YWJjQDEyNy4wLjAuMToxMTIzNA==#local
+  --routes               get all routes in this
+  --interval=int         set refresh interval
+  --jump-ratio=float     set jumpt ratio
 
 General options:
   -h, --help             show this help message and exit

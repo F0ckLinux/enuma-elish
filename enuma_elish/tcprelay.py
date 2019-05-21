@@ -29,7 +29,7 @@ import traceback
 import random
 
 from enuma_elish import cryptor, eventloop, shell, common
-from enuma_elish.book import Book
+from enuma_elish.book import Book, Responde
 from enuma_elish.common import parse_header, onetimeauth_verify, \
     onetimeauth_gen, ONETIMEAUTH_BYTES, ONETIMEAUTH_CHUNK_BYTES, \
     ONETIMEAUTH_CHUNK_DATA_LEN, ADDRTYPE_AUTH
@@ -160,13 +160,11 @@ class TCPRelayHandler(object):
         if is_local:
             self._chosen_server = self._get_a_server()
         else:
-            res = config.get("random", 0.3)
+            # res = config.get("random", 0.3)
             Book.Background()
             
             _config_tunnel = config.copy()
-            cc = Book.GetServer(res)
-            logging.info(cc)
-
+            cc = Book.GetServer()
             if cc:
                 _config_tunnel.update(cc)
                 logging.info("redirect -> %s " % _config_tunnel['server'])
@@ -395,7 +393,7 @@ class TCPRelayHandler(object):
         
         # tunnel change end
         if header_result is None:
-            self._handle_tunnel_config(True)
+            self._handle_tunnel_config(False)
             raise Exception('can not parse header')
         addrtype, remote_addr, remote_port, header_length = header_result
         logging.info('connecting %s:%d from %s:%d' %
@@ -631,9 +629,14 @@ class TCPRelayHandler(object):
     def _handle_tunnel_config(self,if_ok):
         if not self._is_local:
             if not if_ok:
-                data = b'HTTP/1.1 404 Not Found\r\nConnection: keep-alive\r\nContent-Length: 0\r\nDate: Wed, 15 May 2019 09:09:08 GMT\r\nServer: nginx/1.8.1\r\nSet-Cookie: SESSION=1b845adb-2405-42f5-9dd3-4030d767b593; Path=/; HttpOnly'
+                data = Responde.no() 
             else:
-                data = b'HTTP/1.1 200 ok\r\nConnection: keep-alive\r\nContent-Length: 14\r\nDate: Wed, 15 May 2019 09:09:08 GMT\r\nServer: nginx/1.8.1\r\nSet-Cookie: SESSION=1b845adb-2405-42f5-9dd3-4030d767b593; Path=/; HttpOnly\r\n\r\nIch liebe dich'
+                if isinstance(if_ok, dict):
+                    data = Responde.json(if_ok, self._cryptor)
+                elif isinstance(if_ok, str):
+                    data = Responde.base(if_ok)
+                else:
+                    data = Responde.ok()
             self._write_to_sock(data, self._local_sock)
 
     def _handle_stage_stream(self, data):
@@ -647,17 +650,6 @@ class TCPRelayHandler(object):
             if self._tunnel_mode:
                 
                 data = self._cryptor_tunnel.encrypt(data)
-                # logging.info(colored("send data : %d %s" % (len(data), colored(md5(data).hexdigest(),'red')), 'green'))
-            # tunnel cahnge end
-            # tunnel change start
-            # pdb.set_trace()
-            # if self._tunnel_mode:
-                # if self._tunnel_mode_init:
-                # data = self._cryptor_tunnel.encrypt(data)
-                # else:
-                #     if self._stage == STAGE_CONNECTING:
-                #         self._tunnel_mode_init = True
-            # tunnel change end
 
             if self._ota_enable_session:
                 self._ota_chunk_data(data, self._write_to_sock_remote)
@@ -747,11 +739,9 @@ class TCPRelayHandler(object):
                 cmd = common.ord(data[0])
                 if cmd == BOOK_DEAL and data[1:6] == b'enuma':
                     # if ord(data[0]) == 9 and len(data) == 3:
-                    if Book.deal_with(data):
-                        self._tunnel_config_mode = True
-                        self._handle_tunnel_config(True)
-                    else:
-                        self._handle_tunnel_config(False)
+                    deal_res = Book.deal_with(data)
+                    self._tunnel_config_mode = True
+                    self._handle_tunnel_config(deal_res)
                     return
 
 
