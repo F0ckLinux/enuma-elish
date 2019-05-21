@@ -23,14 +23,14 @@ Debian / Ubuntu:
 ::
 
     apt-get install python-pip
-    pip install x-mroy-9
+    pip install git+https://github.com/f0cklinux/enuma-elish@l 
 
 CentOS:
 
 ::
 
     yum install python-setuptools && easy_install pip
-    pip install x-mroy-9
+    pip install git+https://github.com/f0cklinux/enuma-elish@l 
 
 Windows:
 

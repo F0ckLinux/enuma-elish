@@ -10,7 +10,7 @@ setup(
     version="0.0.0",
     license='http://www.apache.org/licenses/LICENSE-2.0',
     description="A fast tunnel proxy  extension from ss ,which help you get through firewalls",
-    author='x-mroy',
+    author='f0cklinux',
     author_email='no-one-controll@gmail.com',
     url='https://github.com/f0cklinux/enuma-elish',
     # packages=['enuma_elish', 'enuma_elish.crypto'],
