@@ -7,7 +7,7 @@ import sys
 import logging
 from enuma_elish import common, cryptor
 import socket
-from base64 import b64decode
+from base64 import b64decode, b64encode
 from time import strftime, gmtime
 PY=3
 if sys.version[0] == '3':
@@ -226,7 +226,8 @@ class Book:
                     'routes':list(cls._book.values()),
                     'interval':cls.interval,
                     'jump-ratio':cls.ratio,
-                    'sort_keys': cls._sort_book
+                    'sort_keys': cls._sort_book,
+                    'mode':cls.mode,
                 }
             elif data.startswith('set-interval'):
                 data = int(data[len('set-interval'):].strip())

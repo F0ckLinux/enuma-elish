@@ -390,7 +390,7 @@ def get_config(is_local):
     pwd = config.get('password')
 
     if set_book_mode is not None:
-        logging.info(book.Book.changeMode(ip,port,set_book_mode, pwd, method=method))
+        print(book.Book.changeMode(ip,port,set_book_mode, pwd, method=method))
         sys.exit(0)
 
     if set_book_dir is not None:
