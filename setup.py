@@ -2,12 +2,10 @@ import codecs
 from setuptools import setup
 from setuptools import find_packages
 
-with codecs.open('README.rst', encoding='utf-8') as f:
-    long_description = f.read()
 
 setup(
     name="enuma-elish",
-    version="0.0.0",
+    version="0.0.1",
     license='http://www.apache.org/licenses/LICENSE-2.0',
     description="A fast tunnel proxy  extension from ss ,which help you get through firewalls",
     author='f0cklinux',
@@ -16,7 +14,7 @@ setup(
     # packages=['enuma_elish', 'enuma_elish.crypto'],
     packages=find_packages(),
     package_data={
-        'enuma_elish': ['README.rst','LICENSE']
+        'enuma_elish': ['README.md','LICENSE']
     },
     install_requires=[],
     include_package_data=True,
@@ -36,5 +34,4 @@ setup(
     #     'Programming Language :: Python :: Implementation :: PyPy',
     #     'Topic :: Internet :: Proxy Servers',
     # ],
-    long_description=long_description,
 )

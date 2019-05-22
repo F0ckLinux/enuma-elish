@@ -277,6 +277,17 @@ class Book:
         cls._queue.put("close")
 
     @classmethod
+    def ss(cls, conf):
+        if os.path.exists(conf):
+            with open(conf) as fp:
+                try:
+                    con = json.load(fp)
+                    if 'server_port' in con and 'password' in con:
+                        return 'ss://' + b64encode(':'.join([con['method'],con['password']+ '@' + con['server'],con['server_port']]).encode()).decode()
+                except:
+                    return ''
+
+    @classmethod
     def SendCode(cls,ip,port, data, password, method='aes-256-cfb', openssl=None, mbedtls=None, sodium=None):
         crypto_path = {
             'openssl':openssl,
