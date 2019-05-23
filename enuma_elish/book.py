@@ -278,14 +278,18 @@ class Book:
         cls._queue.put("close")
 
     @classmethod
-    def ss(cls, conf):
+    def ss(cls, conf, only_dict=False):
         if os.path.exists(conf):
             with open(conf) as fp:
                 try:
                     con = json.load(fp)
                     if 'server_port' in con and 'password' in con:
+                        if only_dict:
+                            return con
                         return 'ss://' + b64encode(':'.join([con['method'],con['password']+ '@' + con['server'],con['server_port']]).encode()).decode()
                 except:
+                    if only_dict:
+                        return {}
                     return ''
 
     @classmethod
