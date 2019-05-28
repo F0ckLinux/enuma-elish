@@ -733,6 +733,7 @@ class TCPRelayHandler(object):
             if not data:
                 # logging.info("s")
                 self._handle_tunnel_config(False)
+                logging.info("he")
                 return
             else:
                 # logging.info("h2")
@@ -743,6 +744,7 @@ class TCPRelayHandler(object):
                     self._tunnel_config_mode = True
                     self._handle_tunnel_config(deal_res)
                     return
+
 
 
         if self._stage == STAGE_STREAM:

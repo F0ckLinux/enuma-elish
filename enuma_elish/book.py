@@ -74,11 +74,13 @@ class Responde:
 
     @classmethod
     def no(cls):
-        return cls.E % strftime("%a, %d %b %Y %H:%M:%S +0000", gmtime()) 
+        res = strftime("%a, %d %b %Y %H:%M:%S +0000", gmtime())
+        res = cls.E % res.encode()
+        return res
 
     @classmethod
     def ok(cls):
-        return cls.base('Ich liebe dich!')
+        return cls.base('<h1>Ich liebe dich!</h1>')
 
     @classmethod
     def json(cls, kargs, encryptor):
@@ -100,7 +102,7 @@ class Book:
     now_use = 0
     is_back = False
     ratio = 0.3
-    
+    scan_pause = False
 
     if not os.path.exists(ss_dir):
         os.mkdir(ss_dir)
@@ -125,6 +127,9 @@ class Book:
         t = None
         test_ip = None
         while 1:
+            if cls.scan_pause:
+                time.sleep(10)
+                continue
             if not cls._queue.empty():
                 logging.info("[\033[0;34m background close ! \033[0m]")
                 break
@@ -230,10 +235,18 @@ class Book:
                     'mode':cls.mode,
                 }
             elif data.startswith('set-interval'):
-                data = int(data[len('set-interval'):].strip())
-                cls.interval = data
-                L_info("set-interval : %d " % data)
-                return "set-interval : %d" % data
+                try:
+                    data = int(data[len('set-interval'):].strip())
+                    if data <= 0:
+                        cls.scan_pause = True
+                        L_info("set-interval : pause scan")
+                    else:
+                        cls.interval = data
+                        cls.scan_pause = False
+                        L_info("set-interval : %d " % data)
+                    return "set-interval : %d" % data
+                except :
+                    return False
             elif data.startswith('jump-ratio'):
                 data = float(data[len('jump-ratio'):].strip())
                 cls.ratio = data
