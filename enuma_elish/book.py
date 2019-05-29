@@ -304,14 +304,53 @@ class Book:
                     if only_dict:
                         return {}
                     return ''
+    @classmethod
+    def Links(cls, confs):
+        conf = [cls.ss(i, True) if not isinstance(i, dict) else i for i in confs ]
+        def _l(a,b):
+            s = 'ss://' + b64encode(':'.join([b['method'],b['password']+ '@' + b['server'], b['server_port']]).encode()).decode()
+            res = cls.linkOther(a['server'],a['server_port'], s, a['password'], method=a['method'])
+            cls.refreshTime(a['server'],a['server_port'],'-1',a['password'], method=a['method'])
+            return res
+        last = None
+        res = None
+        for no,i in enumerate(confs):
+            if not last:
+                last = i
+                continue
+
+            res = _l(last, i)
+            if 'failed' in res:
+                return 1,i
+            last = i
+        return 0,res
 
     @classmethod
-    def SendCode(cls,ip,port, data, password, method='aes-256-cfb', openssl=None, mbedtls=None, sodium=None):
+    def from_ss_str(cls, ss):
+        s = 'ss://' + b64encode(':'.join([b['method'],b['password']+ '@' + b['server'], b['server_port']]).encode()).decode()
+        method, pwdip, port = ss[5:].split(":")
+        pwd,server = pwdip.split("@")
+        return {
+            "server":server,
+            "server_port":port,
+            "password": pwd,
+            "method":method,
+        }
+
+    @classmethod
+    def SendCode(cls,ip,port, data, password, method='aes-256-cfb', openssl=None, mbedtls=None, sodium=None, conf_file=None):
         crypto_path = {
             'openssl':openssl,
             'mbedtls':mbedtls,
             'sodium':sodium
         }
+        if conf_file and os.path.exists(conf_file):
+            with open(conf_file) as fp:
+                w = json.load(fp)
+                ip = w.get('server')
+                port = w.get('server_port')
+                method = w.get('method')
+                password = w.get('password')
         c = cryptor.Cryptor(password,method,crypto_path)
         en_data = c.encrypt(data)
         try:
