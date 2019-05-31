@@ -308,9 +308,9 @@ class Book:
     def Links(cls, confs):
         conf = [cls.ss(i, True) if not isinstance(i, dict) else i for i in confs ]
         def _l(a,b):
-            s = 'ss://' + b64encode(':'.join([b['method'],b['password']+ '@' + b['server'], b['server_port']]).encode()).decode()
-            res = cls.linkOther(a['server'],a['server_port'], s, a['password'], method=a['method'])
-            cls.refreshTime(a['server'],a['server_port'],'-1',a['password'], method=a['method'])
+            s = 'ss://' + b64encode(':'.join([b['method'],b['password']+ '@' + b['server'], str(b['server_port'])]).encode()).decode()
+            res = cls.linkOther(a['server'],int(a['server_port']), s, a['password'], method=a['method'])
+            cls.refreshTime(a['server'],int(a['server_port']),'-1',a['password'], method=a['method'])
             return res
         last = None
         res = None
@@ -320,6 +320,8 @@ class Book:
                 continue
 
             res = _l(last, i)
+            if isinstance(res, bytes):
+                res = res.decode()
             if 'failed' in res:
                 return 1,i
             last = i

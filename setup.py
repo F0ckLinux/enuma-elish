@@ -5,7 +5,7 @@ from setuptools import find_packages
 
 setup(
     name="enuma-elish",
-    version="0.0.3",
+    version="0.0.5",
     license='http://www.apache.org/licenses/LICENSE-2.0',
     description="A fast tunnel proxy  extension from ss ,which help you get through firewalls",
     author='f0cklinux',
