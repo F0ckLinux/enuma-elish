@@ -292,7 +292,7 @@ class Book:
 
     @classmethod
     def ss(cls, conf, only_dict=False):
-        if os.path.exists(conf):
+        if not isinstance(conf,dict) and os.path.exists(conf):
             with open(conf) as fp:
                 try:
                     con = json.load(fp)
@@ -304,6 +304,11 @@ class Book:
                     if only_dict:
                         return {}
                     return ''
+        elif isinstance(conf, dict):
+            if PY == 2:
+                return 'ss://' + b64encode(':'.join([conf['method'],conf['password']+ '@' + conf['server'],conf['server_port']]).encode()).decode()
+            else:
+                return 'ss://' + b64encode(':'.join([conf['method'],conf['password'].decode()+ '@' + conf['server'],str(conf['server_port'])]).encode()).decode()
     @classmethod
     def Links(cls, confs):
         conf = [cls.ss(i, True) if not isinstance(i, dict) else i for i in confs ]

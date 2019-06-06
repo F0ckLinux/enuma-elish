@@ -221,6 +221,7 @@ def get_config(is_local):
     set_routes = None
     set_interval = None
     set_jump_ratio = None
+    set_ss_str = None
     logging.basicConfig(level=logging.INFO,
                         format='%(levelname)-s: %(message)s')
     if is_local:
@@ -233,7 +234,7 @@ def get_config(is_local):
                     'forbidden-ip=', 'user=', 'manager-address=', 'version',
                     'libopenssl=', 'libmbedtls=', 'libsodium=', 'prefer-ipv6',
                     'switch-mode=','ss-dir=', 'link=', 'add-link=','interval=',
-                    'routes','jump-ratio=']
+                    'routes','jump-ratio=','ss-str']
     try:
         config_path = find_config()
         optlist, args = getopt.getopt(sys.argv[1:], shortopts, longopts)
@@ -326,6 +327,8 @@ def get_config(is_local):
                 set_routes = True
             elif key == '--interval':
                 set_interval = to_str(value)
+            elif key == '--ss-str':
+                set_ss_str = True
             elif key == '--jump-ratio':
                 set_jump_ratio = to_str(value)
 
@@ -415,6 +418,10 @@ def get_config(is_local):
 
     if set_jump_ratio is not None:
         print(book.Book.jumpRatio(ip,port, set_jump_ratio, pwd, method=method))
+        sys.exit(0)
+
+    if set_ss_str is not None:
+        print(book.Book.ss(config))
         sys.exit(0)
 
     if not is_local and not 'daemon' in config:
@@ -534,6 +541,7 @@ Proxy options:
   --routes               get all routes in this
   --interval=int         set refresh interval
   --jump-ratio=float     set jumpt ratio
+  --ss-str               print ss_str from config
 
 General options:
   -h, --help             show this help message and exit
