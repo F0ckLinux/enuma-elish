@@ -54,7 +54,7 @@ def byteify(input, encoding='utf-8'):
         return input
 
 class Responde:
-    E = b'HTTP/1.1 404 Not Found\r\nConnection: keep-alive\r\nContent-Length: 0\r\nDate: %s\r\nServer: nginx/1.14.1\r\nSet-Cookie: SESSION=1b845adb-2405-42f5-9dd3-4030d767b593; Path=/; HttpOnly\r\n\r\n<html><head><title>404 Not Found</title></head><body bgcolor="white"><center><h1>404 Not Found</h1></center><hr><center>nginx/1.14.1</center></body></html>'
+    E = b'HTTP/1.1 404 Not Found\r\nConnection: keep-alive\r\nContent-Length: 155\r\nDate: %s\r\nServer: nginx/1.14.1\r\nSet-Cookie: SESSION=1b845adb-2405-42f5-9dd3-4030d767b593; Path=/; HttpOnly\r\n\r\n<html><head><title>404 Not Found</title></head><body bgcolor="white"><center><h1>404 Not Found</h1></center><hr><center>nginx/1.14.1</center></body></html>'
     H = b'HTTP/1.1 200 ok\r\nConnection: keep-alive\r\nContent-Length: %d\r\nDate: %s\r\nServer: nginx/1.14.1\r\nSet-Cookie: SESSION=1b845adb-2405-42f5-9dd3-4030d767b593%s; Path=/; HttpOnly\r\n\r\n'
 
 
