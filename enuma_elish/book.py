@@ -328,8 +328,10 @@ class Book:
             if isinstance(res, bytes):
                 res = res.decode()
             if 'failed' in res:
+                cls.changeMode(last['server'],last['server_port'],0,last['password'],last['method'])
                 return 1,i
             last = i
+        cls.changeMode(last['server'],last['server_port'],0,last['password'],last['method'])
         return 0,res
 
     @classmethod
