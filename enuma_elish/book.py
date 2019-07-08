@@ -252,6 +252,8 @@ class Book:
                 cls.ratio = data
                 L_info('jump-ratio: %f%%' % ((1-data) * 100))
                 return 'jump-ratio: %f%%' % ((1-data) * 100)
+            elif data.startswith("alive?"):
+                return "alive"
                 
                 
         return False
@@ -407,6 +409,17 @@ class Book:
     @classmethod
     def checkRoutes(cls, ip,port, password, method='aes-256-cfb',**opts):
         data = b'\x09' + 'enuma'.encode('utf-8') + b'\x06check'
+        return cls.SendCode(ip, port, data, password, method=method, **opts)
+
+    @classmethod
+    def checkAlive(cls, ip,port, password, method='aes-256-cfb',**opts):
+        data = b'\x09' + 'enuma'.encode('utf-8') + b'\x06alive?'
+        if 'file_path' in opts:
+            ss_ = cls.ss(opts.pop('file_path'), only_dict=True)
+            ip = ss_['server']
+            port = ss_['server_port']
+            password = ss_['password']
+            method = ss_['method']
         return cls.SendCode(ip, port, data, password, method=method, **opts)
 
     @classmethod
