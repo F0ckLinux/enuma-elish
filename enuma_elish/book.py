@@ -412,15 +412,19 @@ class Book:
         return cls.SendCode(ip, port, data, password, method=method, **opts)
 
     @classmethod
-    def checkAlive(cls, ip,port, password, method='aes-256-cfb',**opts):
+    def checkAlive(cls, ip='localhost',port=1080, password='1234', method='aes-256-cfb',**opts):
         data = b'\x09' + 'enuma'.encode('utf-8') + b'\x06alive?'
         if 'file_path' in opts:
             ss_ = cls.ss(opts.pop('file_path'), only_dict=True)
             ip = ss_['server']
-            port = ss_['server_port']
+            port = int(ss_['server_port'])
             password = ss_['password']
             method = ss_['method']
-        return cls.SendCode(ip, port, data, password, method=method, **opts)
+        res = cls.SendCode(ip, port, data, password, method=method, **opts)
+        if isinstance(res, bytes):
+            res = res.decode('utf-8','ignore')
+        if res.endswith("alive"):
+            return ip
 
     @classmethod
     def refreshTime(cls, ip,port, time, password, method='aes-256-cfb',**opts):
