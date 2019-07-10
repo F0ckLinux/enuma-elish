@@ -311,6 +311,33 @@ class Book:
                 return 'ss://' + b64encode(':'.join([conf['method'],conf['password']+ '@' + conf['server'],conf['server_port']]).encode()).decode()
             else:
                 return 'ss://' + b64encode(':'.join([conf['method'],conf['password'].decode()+ '@' + conf['server'],str(conf['server_port'])]).encode()).decode()
+
+    @classmethod
+    def Brutes(cls, confs):
+        confs = [cls.ss(i, True) if not isinstance(i, dict) else i for i in confs ]
+        def _l(a,b):
+            s = 'ss://' + b64encode(':'.join([b['method'],b['password']+ '@' + b['server'], str(b['server_port'])]).encode()).decode()
+            res = cls.addRoute(a['server'],int(a['server_port']), s, a['password'], method=a['method'])
+            return res
+
+        assert len(confs) > 1
+        fr = confs[0]
+        others = confs[1:]
+        sus = []
+        failed = []
+        for other in others:
+            r = _l(fr, other)
+            if isinstance(r, bytes):
+                r = r.decode('utf-8','ignore')
+            if not 'failed' in r:
+                sus.append(other['server'])
+            else:
+                failed.append(other['server'])
+        if sus:
+            cls.refreshTime(fr['server'],int(fr['server_port']), '36000', fr['password'], method=fr['method'])
+            cls.changeMode(fr['server'],int(fr['server_port']),1,fr['password'],fr['method'])
+        return 0,','.join(sus)+"|"+",".join(failed)
+
     @classmethod
     def Links(cls, confs):
         conf = [cls.ss(i, True) if not isinstance(i, dict) else i for i in confs ]
