@@ -376,7 +376,13 @@ class Book:
         }
 
     @classmethod
-    def SendCode(cls,ip,port, data, password, method='aes-256-cfb', openssl=None, mbedtls=None, sodium=None, conf_file=None):
+    def SendCode(cls,ip,port, data, password, method='aes-256-cfb', openssl=None, mbedtls=None, sodium=None, conf_file=None, file_path=None):
+        if file_path:
+            ss_ = cls.ss(file_path, only_dict=True)
+            ip = ss_['server']
+            port = int(ss_['server_port'])
+            password = ss_['password']
+            method = ss_['method']
         crypto_path = {
             'openssl':openssl,
             'mbedtls':mbedtls,
@@ -442,11 +448,8 @@ class Book:
     def checkAlive(cls, ip='localhost',port=1080, password='1234', method='aes-256-cfb',**opts):
         data = b'\x09' + 'enuma'.encode('utf-8') + b'\x06alive?'
         if 'file_path' in opts:
-            ss_ = cls.ss(opts.pop('file_path'), only_dict=True)
+            ss_ = cls.ss(opts['file_path'], only_dict=True)
             ip = ss_['server']
-            port = int(ss_['server_port'])
-            password = ss_['password']
-            method = ss_['method']
         res = cls.SendCode(ip, port, data, password, method=method, **opts)
         if isinstance(res, bytes):
             res = res.decode('utf-8','ignore')
