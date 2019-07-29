@@ -23,7 +23,7 @@ DEBUG_BASE2 = {"server": "localhost", "server_port": 12001, "password": "123", "
 
 # BOOK PROTOCOL: \x09
 
-# METHOD : 
+# METHOD :
 #   change mode: \x01
 #   change random rato: \x02
 # MODE single: \x00
@@ -69,7 +69,7 @@ class Responde:
             content = content.encode()
         if en:
             content = en.encrypt(content)
-        return cls.H % (len(content), T.encode(), e_tag) + content 
+        return cls.H % (len(content), T.encode(), e_tag) + content
 
 
     @classmethod
@@ -112,16 +112,16 @@ class Book:
             if not os.path.exists(ss_dir):
                 os.mkdir(ss_dir)
         self.last_time = time.time()
-        
+
         if interval:
             self.interval = interval
         self._last_use = None
-        
+
 
         if not self._if_init:
             self.refresh()
             Book._if_init = True
-    
+
     @classmethod
     def schedule_refresh(cls):
         t = None
@@ -145,7 +145,7 @@ class Book:
                     test_ip.start()
                 # t.join(10)
             except:
-                pass    
+                pass
             logging.info("[\033[0;34m Refresh Book \033[0m]")
             time.sleep(cls.interval)
 
@@ -157,7 +157,7 @@ class Book:
             t_daemon.start()
             cls.is_back = True
             logging.info("[\033[0;34m background for a scheduler which one ouput config from book!\033[0m]")
-    
+
     @classmethod
     def deal_with(cls, data):
         socks_version = common.ord(data[0])
@@ -254,8 +254,8 @@ class Book:
                 return 'jump-ratio: %f%%' % ((1-data) * 100)
             elif data.startswith("alive?"):
                 return "alive"
-                
-                
+
+
         return False
 
     @classmethod
@@ -281,7 +281,7 @@ class Book:
                 if k in cls._book:
                     logging.info("[\033[0;34m del %s \033[0m]" % k)
                     del cls._book[k]
-         
+
         s = sorted(sort_keys,key= lambda x: sort_keys[x])
         # import pdb; pdb.set_trace()
         if len(s) > 0:
@@ -315,12 +315,14 @@ class Book:
     @classmethod
     def Brutes(cls, confs):
         confs = [cls.ss(i, True) if not isinstance(i, dict) else i for i in confs ]
+        assert len(confs) > 1
+        cls.refreshTime(fr['server'],int(fr['server_port']), '36000', fr['password'], method=fr['method'])
+        cls.changeMode(fr['server'],int(fr['server_port']),1,fr['password'],fr['method'])
         def _l(a,b):
             s = 'ss://' + b64encode(':'.join([b['method'],b['password']+ '@' + b['server'], str(b['server_port'])]).encode()).decode()
             res = cls.addRoute(a['server'],int(a['server_port']), s, a['password'], method=a['method'])
             return res
 
-        assert len(confs) > 1
         fr = confs[0]
         others = confs[1:]
         sus = []
@@ -333,9 +335,6 @@ class Book:
                 sus.append(other['server'])
             else:
                 failed.append(other['server'])
-        if sus:
-            cls.refreshTime(fr['server'],int(fr['server_port']), '36000', fr['password'], method=fr['method'])
-            cls.changeMode(fr['server'],int(fr['server_port']),1,fr['password'],fr['method'])
         return 0,','.join(sus)+"|"+",".join(failed)
 
     @classmethod
@@ -509,7 +508,7 @@ class Book:
                     if PY == 2:
                         config = byteify(config)
 
-                    if cls.chk(config): 
+                    if cls.chk(config):
                 # logging.info(str(config))
                         book[f] = config
                 except:
@@ -517,7 +516,7 @@ class Book:
         book.update(cls.scan('/tmp'))
         if os.path.isdir(os.path.expanduser('~/.config')):
             book.update(cls.scan(os.path.expanduser('~/.config')))
-    
+
         l = len(book)
         for i in range(l):
             no += [i for n in range(l-i)]
@@ -554,14 +553,14 @@ class Book:
     def if_jump(self, res=0.3):
         i = 1
         try:
-            i = float(res)    
+            i = float(res)
         except:
             i = 0
-        
+
         if random.random() > i:
             return True
         return False
-    
+
 
 
     @classmethod
