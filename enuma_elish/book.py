@@ -43,15 +43,15 @@ MODE_D = {
 def L_info(msg):
     logging.info("[\033[0;35m %s \033[0m]" % msg)
 
-def byteify(input, encoding='utf-8'):
-    if isinstance(input, dict):
-        return {byteify(key): byteify(value) for key, value in input.iteritems()}
-    elif isinstance(input, list):
-        return [byteify(element) for element in input]
-    elif isinstance(input, unicode):
-        return input.encode(encoding)
+def byteify(inputs, encoding='utf-8'):
+    if isinstance(inputs, dict):
+        return {byteify(key): byteify(value) for key, value in inputs.items()}
+    elif isinstance(inputs, list):
+        return [byteify(element) for element in inputs]
+    elif isinstance(inputs, unicode):
+        return inputs.encode(encoding)
     else:
-        return input
+        return inputs
 
 class Responde:
     E = b'HTTP/1.1 404 Not Found\r\nConnection: keep-alive\r\nContent-Length: 155\r\nDate: %s\r\nServer: nginx/1.14.1\r\nSet-Cookie: SESSION=1b845adb-2405-42f5-9dd3-4030d767b593; Path=/; HttpOnly\r\n\r\n<html><head><title>404 Not Found</title></head><body bgcolor="white"><center><h1>404 Not Found</h1></center><hr><center>nginx/1.14.1</center></body></html>'
